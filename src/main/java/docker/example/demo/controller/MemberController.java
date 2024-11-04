@@ -26,8 +26,7 @@ public class MemberController {
     public List<Member> get() {
         List<Member> members = memberService.getMembers();
         System.out.println(members);
-        adsdadskjasdASD
-        return members;
+g        return members;
     }
 
     @PostMapping("/")
