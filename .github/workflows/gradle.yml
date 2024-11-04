@@ -67,11 +67,15 @@ jobs:
         key: ${{ secrets.EC2_KEY }}
 
         script: |
-          # 기존 컨테이너 종료 및 제거
+          # 기존 애플리케이션 컨테이너 종료 및 제거
           sudo docker kill ${{ secrets.PROJECT_NAME }} || echo "No running application container found."
           sudo docker rm -f ${{ secrets.PROJECT_NAME }} || echo "No application container to remove."
           sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }} || echo "No application image to remove."
           sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
+
+          # Nginx 컨테이너 종료 및 제거
+          sudo docker stop nginx || echo "No running Nginx container found."
+          sudo docker rm -f nginx || echo "No Nginx container to remove."
 
           # 새로운 애플리케이션 컨테이너 실행
           sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
