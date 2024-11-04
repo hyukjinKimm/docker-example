@@ -26,6 +26,7 @@ public class MemberController {
     public List<Member> get() {
         List<Member> members = memberService.getMembers();
         System.out.println(members);
+        dask
         return members;
     }
 
