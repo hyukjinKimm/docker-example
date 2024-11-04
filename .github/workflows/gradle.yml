@@ -29,10 +29,10 @@ jobs:
         distribution: 'temurin'
 
     ## application.yml 생성 후 secret 값 복붙
-    - uses: actions/checkout@v3
+    # application.yml 생성 및 디렉토리 생성
+    - run: mkdir -p ./src/main/resources
     - run: touch ./src/main/resources/application.yml
     - run: echo "${{ secrets.APPLICATION }}" > ./src/main/resources/application.yml
-    - run: cat ./src/main/resources/application.yml
 
     # Gradle Build를 위한 권한 부여
     - name: Grant execute permission for gradlew
