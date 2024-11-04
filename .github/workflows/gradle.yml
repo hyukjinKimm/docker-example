@@ -52,12 +52,13 @@ jobs:
     # Docker 이미지 빌드
     - name: Build Docker image
       run: |
-        echo "Building Docker image with tag: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
-        docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest" . --platform=linux/amd64
+        TAG="${{ github.sha }}"  # 현재 커밋 SHA를 태그로 사용
+        echo "Building Docker image with tag: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:${TAG}"
+        docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:${TAG}" . --platform=linux/amd64
 
     # DockerHub Push
     - name: DockerHub Push
-      run: docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
+      run: docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:${TAG}"
 
     # EC2 인스턴스 접속 및 애플리케이션 실행
     - name: Application Run
@@ -67,15 +68,16 @@ jobs:
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.EC2_KEY }}
         script: |
-          # 이전 컨테이너 종료 및 삭제
+          echo "Killing previous container..."
           sudo docker kill ${{ secrets.PROJECT_NAME }} || echo "No running container found."
+          echo "Removing previous container..."
           sudo docker rm -f ${{ secrets.PROJECT_NAME }} || echo "No container to remove."
           
-          # 이전 이미지 삭제
+          echo "Removing previous image..."
           sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }} || echo "No image to remove."
           
-          # 최신 이미지 가져오기
+          echo "Pulling latest image..."
           sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest
 
-          # 새로운 컨테이너 실행
+          echo "Running new container..."
           sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} -v mysql-volume:/var/lib/mysql --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest
