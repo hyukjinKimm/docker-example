@@ -74,11 +74,11 @@ jobs:
           sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
 
           # 새로운 애플리케이션 컨테이너 실행
-          sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} -v mysql-volume:/var/lib/mysql --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
+          sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
 
           # Nginx 실행
           echo "Starting Nginx container..."
-          sudo docker run --name nginx -p 80:80 --link ${{ secrets.PROJECT_NAME }}:server -d nginx:latest
+          sudo docker run --name nginx -p 80:80 -d nginx:latest
 
           # Nginx 중지 (필요시)
           # echo "Stopping Nginx container..."
