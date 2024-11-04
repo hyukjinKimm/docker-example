@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-
     ## JDK 설정
     - uses: actions/setup-java@v3
       with:
@@ -28,7 +27,7 @@ jobs:
     - run: echo "${{ secrets.APPLICATION }}" > ./src/main/resources/application.yml
     - run: cat ./src/main/resources/application.yml  # 내용 확인
 
-    # Gradle Build를 위한 권한 부여
+    ## Gradle 실행 권한 부여
     - name: Grant execute permission for gradlew
       run: |
         if [ -f ./gradlew ]; then
@@ -38,49 +37,37 @@ jobs:
           exit 1
         fi
 
-    # Gradle Build (test 제외)
+    ## Gradle Build (test 제외)
     - name: Build with Gradle
       run: ./gradlew clean build -x test
 
-    # DockerHub 로그인
+    ## DockerHub 로그인
     - name: DockerHub Login
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    # Docker 이미지 빌드
+    ## Docker 이미지 빌드
     - name: Build Docker image
       run: |
-        TAG="latest"  # 현재 커밋 SHA를 태그로 사용
-        echo "Building Docker image with tag: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
-        docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest" . 
+        echo "Building Docker image..."
+        docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest" .
 
-    # DockerHub Push
+    ## DockerHub Push
     - name: DockerHub Push
       run: docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
 
-    # EC2 인스턴스 접속 및 애플리케이션 실행
-    - name: Application Run
-      uses: appleboy/ssh-action@v0.1.6
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USERNAME }}
-        key: ${{ secrets.EC2_KEY }}
-        script: |
-          echo "Killing previous application container..."
-          sudo docker kill ${{ secrets.PROJECT_NAME }} || echo "No running application container found."
-          echo "Removing previous application container..."
-          sudo docker rm -f ${{ secrets.PROJECT_NAME }} || echo "No application container to remove."
-          
-          echo "Removing previous application image..."
-          sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }} || echo "No application image to remove."
-          
-          echo "Pulling latest application image..."
-          sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest
-    
-          echo "Running new application container..."
-          sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }}--name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest
-    
-          echo "Starting Nginx container..."
-          sudo docker run --name nginx -p 80:80 --link ${{ secrets.PROJECT_NAME }}:server -d nginx:latest
+    ## EC2에서 컨테이너 관리
+    - name: Manage Docker containers on EC2
+      run: |
+        echo "Killing previous application container..."
+        sudo docker kill ${{ secrets.PROJECT_NAME }} || echo "No running application container found."
+        echo "Removing previous application container..."
+        sudo docker rm -f ${{ secrets.PROJECT_NAME }} || echo "No application container to remove."
+        echo "Pulling latest application image..."
+        sudo docker pull "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
+        echo "Running new application container..."
+        sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ${{ secrets.PROJECT_NAME }} -d "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
+        echo "Starting Nginx container..."
+        sudo docker run --name nginx -p 80:80 --network my_network -d nginx:latest
