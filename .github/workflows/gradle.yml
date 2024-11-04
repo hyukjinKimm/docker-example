@@ -70,4 +70,4 @@ jobs:
         echo "Running new application container..."
         sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ${{ secrets.PROJECT_NAME }} -d "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
         echo "Starting Nginx container..."
-        sudo docker run --name nginx -p 80:80 --network my_network -d nginx:latest
+        sudo docker run --name nginx -p 80:80 -d nginx:latest
