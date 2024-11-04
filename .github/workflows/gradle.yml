@@ -57,17 +57,18 @@ jobs:
     ## DockerHub Push
     - name: DockerHub Push
       run: docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
+    # EC2 인스턴스 접속 및 애플리케이션 실행
+    - name: Application Run
+      uses: appleboy/ssh-action@v0.1.6
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USERNAME }}
+        key: ${{ secrets.EC2_KEY }}
 
-    ## EC2에서 컨테이너 관리
-    - name: Manage Docker containers on EC2
-      run: |
-        echo "Killing previous application container..."
-        sudo docker kill ${{ secrets.PROJECT_NAME }} || echo "No running application container found."
-        echo "Removing previous application container..."
-        sudo docker rm -f ${{ secrets.PROJECT_NAME }} || echo "No application container to remove."
-        echo "Pulling latest application image..."
-        sudo docker pull "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
-        echo "Running new application container..."
-        sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ${{ secrets.PROJECT_NAME }} -d "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
-        echo "Starting Nginx container..."
-        sudo docker run --name nginx -p 80:80 -d nginx:latest
+        script: |
+          sudo docker kill ${{ secrets.PROJECT_NAME }}
+          sudo docker rm -f ${{ secrets.PROJECT_NAME }}
+          sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
+          sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
+
+          sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} -v mysql-volume:/var/lib/mysql --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
