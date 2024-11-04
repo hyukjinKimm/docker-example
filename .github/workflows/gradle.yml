@@ -2,7 +2,8 @@ name: Java CD with Gradle
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - "main"
 
 permissions:
   contents: read
@@ -12,80 +13,80 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    ## JDK 설정
-    - uses: actions/setup-java@v3
-      with:
-        java-version: '17'
-        distribution: 'temurin'
+      # JDK 설정
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
 
-    ## 코드 체크아웃
-    - name: Checkout code
-      uses: actions/checkout@v3
+      # 코드 체크아웃
+      - name: Checkout code
+        uses: actions/checkout@v3
 
-    ## application.yml 생성 및 디렉토리 생성
-    - run: mkdir -p ./src/main/resources
-    - run: echo "${{ secrets.APPLICATION }}" > ./src/main/resources/application.yml
-    - run: cat ./src/main/resources/application.yml  # 내용 확인
+      # application.yml 생성 및 디렉토리 생성
+      - run: mkdir -p ./src/main/resources
+      - run: echo "${{ secrets.APPLICATION }}" > ./src/main/resources/application.yml
+      - run: cat ./src/main/resources/application.yml  # 내용 확인
 
-    ## Gradle 실행 권한 부여
-    - name: Grant execute permission for gradlew
-      run: |
-        if [ -f ./gradlew ]; then
-          chmod +x ./gradlew
-        else
-          echo "gradlew file not found!"
-          exit 1
-        fi
+      # Gradle 실행 권한 부여
+      - name: Grant execute permission for gradlew
+        run: |
+          if [ -f ./gradlew ]; then
+            chmod +x ./gradlew
+          else
+            echo "gradlew file not found!"
+            exit 1
+          fi
 
-    ## Gradle Build (test 제외)
-    - name: Build with Gradle
-      run: ./gradlew clean build -x test
+      # Gradle Build (test 제외)
+      - name: Build with Gradle
+        run: ./gradlew clean build -x test
 
-    ## DockerHub 로그인
-    - name: DockerHub Login
-      uses: docker/login-action@v2
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      # DockerHub 로그인
+      - name: DockerHub Login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-    ## Docker 이미지 빌드
-    - name: Build Docker image
-      run: |
-        echo "Building Docker image..."
-        docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest" .
+      # Docker 이미지 빌드
+      - name: Build Docker image
+        run: |
+          echo "Building Docker image..."
+          docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest" .
 
-    ## DockerHub Push
-    - name: DockerHub Push
-      run: docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
+      # DockerHub Push
+      - name: DockerHub Push
+        run: docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
 
-   - name: Application Run
-  uses: appleboy/ssh-action@v0.1.6
-  with:
-    host: ${{ secrets.EC2_HOST }}
-    username: ${{ secrets.EC2_USERNAME }}
-    key: ${{ secrets.EC2_KEY }}
+      # EC2 인스턴스 접속 및 애플리케이션 실행
+      - name: Application Run
+        uses: appleboy/ssh-action@v0.1.6
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_KEY }}
 
-    script: |
-      # 기존 애플리케이션 컨테이너 종료 및 제거
-      sudo docker kill ${{ secrets.PROJECT_NAME }} || echo "No running application container found."
-      sudo docker rm -f ${{ secrets.PROJECT_NAME }} || echo "No application container to remove."
-      sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }} || echo "No application image to remove."
-      sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
+          script: |
+            # 기존 애플리케이션 컨테이너 종료 및 제거
+            sudo docker kill ${{ secrets.PROJECT_NAME }} || echo "No running application container found."
+            sudo docker rm -f ${{ secrets.PROJECT_NAME }} || echo "No application container to remove."
+            sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }} || echo "No application image to remove."
+            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
 
-      # Nginx 컨테이너 종료 및 제거
-      sudo docker stop nginx || echo "No running Nginx container found."
-      sudo docker rm -f nginx || echo "No Nginx container to remove."
-      sudo docker rmi nginx || echo "No Nginx image to remove."
-      sudo docker pull nginx:latest
+            # Nginx 컨테이너 종료 및 제거
+            sudo docker stop nginx || echo "No running Nginx container found."
+            sudo docker rm -f nginx || echo "No Nginx container to remove."
+            sudo docker rmi nginx || echo "No Nginx image to remove."
+            sudo docker pull nginx:latest
 
-      # 새로운 애플리케이션 컨테이너 실행
-      sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
+            # 새로운 애플리케이션 컨테이너 실행
+            sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
 
-      # Nginx 설정 파일 복사
-      echo "Copying Nginx config..."
-      echo "upstream app { server ${{ secrets.PROJECT_NAME }}:8080; } server { listen 80; location / { proxy_pass http://app; } }" | sudo tee /etc/nginx/conf.d/default.conf
+            # Nginx 설정 파일 복사
+            echo "Copying Nginx config..."
+            echo "upstream app { server ${{ secrets.PROJECT_NAME }}:8080; } server { listen 80; location / { proxy_pass http://app; } }" | sudo tee /etc/nginx/conf.d/default.conf
 
-      # Nginx 실행
-      echo "Starting Nginx container..."
-      sudo docker run --name nginx -p 80:80 -d nginx:latest
-
+            # Nginx 실행
+            echo "Starting Nginx container..."
+            sudo docker run --name nginx -p 80:80 -d nginx:latest
