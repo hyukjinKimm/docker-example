@@ -58,7 +58,7 @@ jobs:
 
     # DockerHub Push
     - name: DockerHub Push
-      run: docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:${TAG}"
+      run: docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:${secrets.TAG}"
 
     # EC2 인스턴스 접속 및 애플리케이션 실행
     - name: Application Run
