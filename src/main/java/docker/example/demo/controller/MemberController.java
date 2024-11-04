@@ -25,6 +25,7 @@ public class MemberController {
     @GetMapping("/")
     public List<Member> get() {
         List<Member> members = memberService.getMembers();
+        System.out.println(members);
         return members;
     }
 
