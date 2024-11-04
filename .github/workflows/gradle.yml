@@ -41,23 +41,23 @@ jobs:
     # Gradle Build (test 제외)
     - name: Build with Gradle
       run: ./gradlew clean build -x test
+
+    # DockerHub 로그인
+    - name: DockerHub Login
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
     # Docker 이미지 빌드
     - name: Debug Docker variables
       run: |
-        echo "DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}"
-        echo "PROJECT_NAME: ${{ secrets.PROJECT_NAME }}"
-  
-    - name: Docker Image Build
-      run: docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest" . --platform=linux/amd64
-
-
-    # Docker 이미지 빌드
-    - name: Docker Image Build
-      run: docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest . --platform=linux/amd64
+        echo "Building Docker image with tag: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
+        docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest" . --platform=linux/amd64
 
     # DockerHub Push
     - name: DockerHub Push
-      run: docker push ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
+      run: docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
 
     # EC2 인스턴스 접속 및 애플리케이션 실행
     - name: Application Run
@@ -72,4 +72,4 @@ jobs:
           sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }} || true
           sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
 
-          sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} -v mysql-volume:/var/lib/mysql --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
+          sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} -v mysql-volume:/var/lib/mysql --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest
