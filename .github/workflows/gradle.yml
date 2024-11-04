@@ -53,8 +53,8 @@ jobs:
     - name: Build Docker image
       run: |
         TAG="latest"  # 현재 커밋 SHA를 태그로 사용
-        echo "Building Docker image with tag: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:${TAG}"
-        docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:${TAG}" . --platform=linux/amd64
+        echo "Building Docker image with tag: ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
+        docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest" . 
 
     # DockerHub Push
     - name: DockerHub Push
