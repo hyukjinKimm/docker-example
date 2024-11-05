@@ -60,26 +60,32 @@ jobs:
         run: docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
 
       # EC2 인스턴스 접속 및 애플리케이션 실행
-      - name: Application Run with Docker Compose
+      - name: Deploy to Hosts
         uses: appleboy/ssh-action@v0.1.6
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
-          key: ${{ secrets.EC2_KEY }}
+          host: ${{ secrets.BASTION_IP}}  # Bastion Host의 IP 주소 또는 호스트 이름
+          username: ${{ secrets.EC2_USERNAME}}  # Bastion Host의 사용자 이름
+          key: ${{ secrets.EC2_KEY}}  # Bastion Host의 SSH 개인 키
 
           script: |
-            # Docker Compose를 사용하여 Nginx와 애플리케이션 실행
-            cd /home/ubuntu  # 워크디렉토리로 이동
+            # Host 1에 대한 애플리케이션 실행
+            ssh -i ${{ secrets.EC2_KEY}} ${{ secrets.EC2_USERNAME}}@${{ secrets.EC2_HOST1}} << 'ENDSSH'
+              cd /home/ubuntu
+              rm .env
+              echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
+              echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env
+              sudo docker-compose down
+              sudo docker-compose up -d
+              sudo docker ps -a
+            ENDSSH
 
-            # GitHub Actions에서 환경 변수 파일 생성
-            rm .env
-            echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
-            echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env
-
-
-            # Docker Compose 실행 (애플리케이션 및 Nginx 컨테이너)
-            sudo docker-compose down  # 기존 컨테이너 종료 (기존에 실행된 게 있다면)
-            sudo docker-compose up -d  # 새로운 컨테이너 실행
-
-            # 컨테이너 상태 확인
-            sudo docker ps -a
+            # Host 2에 대한 애플리케이션 실행
+            ssh -i ${{ secrets.EC2_KEY}} ${{ secrets.EC2_USERNAME}}@${{ secrets.EC2_HOST2}} << 'ENDSSH'
+              cd /home/ubuntu
+              rm .env
+              echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
+              echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env
+              sudo docker-compose down
+              sudo docker-compose up -d
+              sudo docker ps -a
+            ENDSSH
