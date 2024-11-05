@@ -77,21 +77,7 @@ jobs:
             sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }} || echo "No application image to remove."
             sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
 
-            # Nginx 컨테이너 종료 및 제거
-            sudo docker stop nginx || echo "No running Nginx container found."
-            sudo docker rm -f nginx || echo "No Nginx container to remove."
-            sudo docker rmi nginx || echo "No Nginx image to remove."
-            sudo docker pull nginx:latest
-
             # 새로운 애플리케이션 컨테이너 실행
-            sudo docker run --network mynetwork -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
+            sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
 
-            # Nginx 설정 파일 복사
-            echo "Copying Nginx config..."
-            # Nginx 설정 파일 복사
-            echo "upstream app { server ${{ secrets.PROJECT_NAME }}:8080; } server { listen 80; location / { proxy_pass http://app; proxy_set_header Host \$host; proxy_set_header X-Real-IP \$remote_addr; proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for; proxy_set_header X-Forwarded-Proto \$scheme; } }" | sudo tee /etc/nginx/conf.d/default.conf
-
-
-            # Nginx 실행
-            echo "Starting Nginx container..."
-            sudo docker run --network mynetwork --name nginx -p 80:80 -d nginx:latest
+         
