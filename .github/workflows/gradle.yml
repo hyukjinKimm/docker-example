@@ -74,6 +74,16 @@ jobs:
               rm .env
               echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
               echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env
+
+                            # 기존 이미지가 있는지 확인하고 삭제
+              existing_image=$(sudo docker images -q ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }})
+              if [ -n "$existing_image" ]; then
+                echo "기존 이미지 삭제: $existing_image"
+                sudo docker rmi -f $existing_image
+              fi
+
+              sudo docker-compose pull  # 새로운 이미지 가져오기
+              
               sudo docker-compose down
               sudo docker-compose up -d
               sudo docker ps -a
@@ -85,6 +95,14 @@ jobs:
               rm .env
               echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
               echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env
+
+                            existing_image=$(sudo docker images -q ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }})
+              if [ -n "$existing_image" ]; then
+                echo "기존 이미지 삭제: $existing_image"
+                sudo docker rmi -f $existing_image
+              fi
+
+              sudo docker-compose pull  # 새로운 이미지 가져오기
               sudo docker-compose down
               sudo docker-compose up -d
               sudo docker ps -a
