@@ -60,7 +60,7 @@ jobs:
         run: docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}:latest"
 
       # EC2 인스턴스 접속 및 애플리케이션 실행
-      - name: Application Run
+      - name: Application Run with Docker Compose
         uses: appleboy/ssh-action@v0.1.6
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -68,14 +68,12 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
 
           script: |
+            # Docker Compose를 사용하여 Nginx와 애플리케이션 실행
+            cd /home/ubuntu  # 워크디렉토리로 이동
 
-            # 기존 애플리케이션 컨테이너 종료 및 제거
-            sudo docker kill ${{ secrets.PROJECT_NAME }} || echo "No running application container found."
-            sudo docker rm -f ${{ secrets.PROJECT_NAME }} || echo "No application container to remove."
-            sudo docker rmi ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }} || echo "No application image to remove."
-            sudo docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
+            # Docker Compose 실행 (애플리케이션 및 Nginx 컨테이너)
+            sudo docker-compose down  # 기존 컨테이너 종료 (기존에 실행된 게 있다면)
+            sudo docker-compose up -d  # 새로운 컨테이너 실행
 
-            # 새로운 애플리케이션 컨테이너 실행
-            sudo docker run -p ${{ secrets.PORT }}:${{ secrets.PORT }} --name ${{ secrets.PROJECT_NAME }} -d ${{ secrets.DOCKERHUB_USERNAME }}/${{ secrets.PROJECT_NAME }}
-
-         
+            # 컨테이너 상태 확인
+            sudo docker ps -a
