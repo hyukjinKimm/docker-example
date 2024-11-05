@@ -72,6 +72,7 @@ jobs:
             cd /home/ubuntu  # 워크디렉토리로 이동
 
             # GitHub Actions에서 환경 변수 파일 생성
+            rm .env
             echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
             echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env
 
