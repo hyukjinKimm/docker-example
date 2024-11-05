@@ -68,8 +68,6 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
 
           script: |
-            # 사용자 정의 네트워크 생성
-            sudo docker network create mynetwork || echo "Network mynetwork already exists."
 
             # 기존 애플리케이션 컨테이너 종료 및 제거
             sudo docker kill ${{ secrets.PROJECT_NAME }} || echo "No running application container found."
