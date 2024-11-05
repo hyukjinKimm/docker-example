@@ -33,4 +33,10 @@ public class MemberController {
     public void post(@RequestBody MemberDto memberDto) {
         memberService.createMember(memberDto.getName());
     }
+    @GetMapping("/test")
+    public String test() {
+
+        return "SUCCESS";
+    }
+
 }
