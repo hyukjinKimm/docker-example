@@ -71,6 +71,11 @@ jobs:
             # Docker Compose를 사용하여 Nginx와 애플리케이션 실행
             cd /home/ubuntu  # 워크디렉토리로 이동
 
+            # GitHub Actions에서 환경 변수 파일 생성
+            echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
+            echo "PROJECT_NAME=${{ secrets.PROJECT_NAME }}" >> .env
+
+
             # Docker Compose 실행 (애플리케이션 및 Nginx 컨테이너)
             sudo docker-compose down  # 기존 컨테이너 종료 (기존에 실행된 게 있다면)
             sudo docker-compose up -d  # 새로운 컨테이너 실행
