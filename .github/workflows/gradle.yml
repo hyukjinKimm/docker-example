@@ -69,7 +69,7 @@ jobs:
 
           script: |
             # Host 1에 대한 애플리케이션 실행
-            ssh -i ${{ secrets.EC2_KEY}} ${{ secrets.EC2_USERNAME}}@${{ secrets.EC2_HOST1}} << 'ENDSSH'
+            ssh -i ${{ secrets.KEY_NAME}} ${{ secrets.EC2_USERNAME}}@${{ secrets.EC2_HOST1}} << 'ENDSSH'
               cd /home/ubuntu
               rm .env
               echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
@@ -80,7 +80,7 @@ jobs:
             ENDSSH
 
             # Host 2에 대한 애플리케이션 실행
-            ssh -i ${{ secrets.EC2_KEY}} ${{ secrets.EC2_USERNAME}}@${{ secrets.EC2_HOST2}} << 'ENDSSH'
+            ssh -i ${{ secrets.KEY_NAME}} ${{ secrets.EC2_USERNAME}}@${{ secrets.EC2_HOST2}} << 'ENDSSH'
               cd /home/ubuntu
               rm .env
               echo "DOCKERHUB_USERNAME=${{ secrets.DOCKERHUB_USERNAME }}" > .env
