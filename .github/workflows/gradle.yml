@@ -3,7 +3,7 @@ name: Java CD with Gradle
 on:
   push:
     branches:
-      - "main"
+      - "*"  # 모든 브랜치에 대해 CI/CD 작업이 실행되도록 설정
 
 permissions:
   contents: read
